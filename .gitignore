@@ -1,0 +1,75 @@
+# 環境変数ファイル（機密情報を含むため除外）
+.env
+
+# Python仮想環境
+venv/
+env/
+ENV/
+.venv/
+
+# Pythonキャッシュ
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 配布物
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# ユニットテスト/カバレッジ
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ログファイル
+*.log
+
+# ローカル設定ファイル
+local_settings.py
+
+# データベース
+*.db
+*.sqlite3
+
+# OS生成ファイル
+Thumbs.db

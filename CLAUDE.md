@@ -1,0 +1,253 @@
+# 🤖 Voice2Tweet Bot - Claude Code プロジェクトコンテキスト
+
+## 📋 プロジェクト概要
+
+このプロジェクトは、**スマートフォンの音声入力で書き殴ったテキストを、Gemini APIで自動整形し、ワンタップでX（旧Twitter）アプリから投稿できるようにする Discord Bot** です。
+
+### 主な機能
+1. Discordでテキストメッセージを受信
+2. Gemini 1.5 Flash APIで文章を整形（誤字修正・要約・140字以内）
+3. 整形結果をDiscord Embedで表示
+4. 「Xアプリで開く」ボタンで Twitter Intent URL を生成
+
+---
+
+## 🎯 開発状態
+
+**現在のフェーズ**: 📝 **要件定義・準備完了**
+
+- [x] 要件定義書作成（REQUIREMENTS.md）
+- [x] 実装手順書作成（IMPLEMENTATION_PLAN.md）
+- [x] プロジェクトコンテキスト作成（CLAUDE.md）
+- [ ] 実装開始前
+- [ ] テスト未実施
+- [ ] デプロイ未実施
+
+---
+
+## 📁 プロジェクト構造
+
+```
+isdf_tweet_drafter/
+├── .env                  # 環境変数（Gitにコミットしない）⚠️
+├── .env.example          # 環境変数テンプレート
+├── .gitignore            # Git除外設定
+├── requirements.txt      # Pythonパッケージ
+├── main.py               # メインロジック（未作成）
+├── README.md             # プロジェクト説明
+├── REQUIREMENTS.md       # 📋 詳細な要件定義
+├── IMPLEMENTATION_PLAN.md # 🛠️ 実装手順書
+└── CLAUDE.md             # 本ファイル（プロジェクトコンテキスト）
+```
+
+---
+
+## 🔑 重要な技術仕様
+
+### 使用技術スタック
+- **言語**: Python 3.10+
+- **ライブラリ**:
+  - `discord.py` - Discord Bot フレームワーク
+  - `google-generativeai` - Gemini API クライアント
+  - `python-dotenv` - 環境変数管理
+
+### 外部API
+1. **Discord Bot API**
+   - トークン: `.env` の `DISCORD_TOKEN`
+   - 必須設定: Message Content Intent を有効化
+
+2. **Google Gemini API**
+   - モデル: `gemini-1.5-flash`
+   - APIキー: `.env` の `GEMINI_API_KEY`
+   - システムインストラクション: 140字以内に整形、ハッシュタグなし
+
+### システムインストラクション（Gemini）
+```
+あなたはSNS投稿の編集アシスタントです。
+ユーザーから入力されたテキスト（音声入力による乱雑なメモ）を、
+X（旧Twitter）への投稿に適した形式にリライトしてください。
+
+ルール:
+1. 誤字脱字を修正し、自然な口語体にする。
+2. 必ず140文字以内に収める。
+3. ハッシュタグは付けない。
+4. 絵文字を1つ〜2つ適度に使用して親しみやすくする。
+5. 結果のテキストのみを出力する（説明文は不要）。
+```
+
+---
+
+## 🚀 実装時の重要ポイント
+
+### 必須実装項目
+1. **URLエンコード処理**
+   - `urllib.parse.quote()` を使用
+   - 日本語を含むテキストを Twitter Intent URL に埋め込む
+
+2. **エラーハンドリング**
+   - API エラー時にDiscordでエラーメッセージを返す
+   - Bot がクラッシュしないようにする
+
+3. **Discord Intents**
+   - `intents.message_content = True` を設定
+   - Discord Developer Portal で Message Content Intent を有効化
+
+4. **文字数チェック**
+   - 整形後のテキストが140字を超えないことを確認
+   - Embed に文字数を表示
+
+### コーディング規約
+- 単一ファイル構成（`main.py` のみ）でシンプルに保つ
+- システムインストラクションは定数として管理
+- ログ出力でデバッグしやすくする
+
+---
+
+## 📝 実装の流れ
+
+### フェーズ1: 環境構築
+1. `requirements.txt` 作成
+2. `.env.example` 作成
+3. `.gitignore` 作成・更新
+
+### フェーズ2: コア実装
+1. Discord Bot の基本設定
+2. Gemini API の設定
+3. メッセージ受信イベント実装
+4. テキスト整形ロジック実装
+
+### フェーズ3: UI実装
+1. Discord Embed の作成
+2. Twitter Intent URL の生成
+3. ボタン UI の実装
+
+### フェーズ4: テスト
+1. ローカル環境でのテスト
+2. 各種エラーケースの確認
+3. スマホでの動作確認
+
+---
+
+## 🧪 テストケース
+
+### 正常系
+- [ ] 短い文章（10文字程度）
+- [ ] 長い文章（200文字以上）
+- [ ] 誤字を含む文章
+- [ ] 音声入力風の文章（「えーと」「あのー」など）
+
+### 異常系
+- [ ] 空メッセージ
+- [ ] 特殊文字のみ
+- [ ] 絵文字のみ
+- [ ] API エラー発生時
+
+### UI確認
+- [ ] Embed が正しく表示される
+- [ ] ボタンが押せる
+- [ ] スマホでXアプリが起動する
+
+---
+
+## 🔐 セキュリティ
+
+### 機密情報管理
+- `.env` ファイルは **絶対に Git にコミットしない**
+- `.gitignore` に `.env` を追加済み
+- `.env.example` のみをリポジトリに含める
+
+### API キーの取得場所
+1. **Discord Token**:
+   - [Discord Developer Portal](https://discord.com/developers/applications)
+   - Bot 作成後、「Bot」セクションで取得
+
+2. **Gemini API Key**:
+   - [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - 「Create API Key」で取得
+
+---
+
+## 📚 関連ドキュメント
+
+| ドキュメント | 目的 | 参照タイミング |
+|-------------|------|--------------|
+| `REQUIREMENTS.md` | 詳細な要件定義 | 実装前・仕様確認時 |
+| `IMPLEMENTATION_PLAN.md` | ステップバイステップの実装手順 | 実装中 |
+| `CLAUDE.md` | プロジェクト全体のコンテキスト | 初回・復帰時 |
+| `README.md` | プロジェクト概要・使い方 | 利用者向け |
+
+---
+
+## 🤔 よくある質問（FAQ）
+
+### Q1: なぜ Discord を使うのか？
+A: スマホアプリから音声入力が簡単で、Botとの連携がスムーズなため。
+
+### Q2: Gemini ではなく他の AI を使えるか？
+A: 可能。ただし、システムインストラクションの書き方が異なる場合がある。
+
+### Q3: X 以外の SNS にも対応できるか？
+A: MVP では X のみ対応。将来的には Instagram や Facebook も検討可能。
+
+### Q4: 140字を超えたらどうなる？
+A: システムインストラクションで「140字以内」を指定しているため、Gemini が自動で要約する。
+
+---
+
+## 🛠️ トラブルシューティング
+
+### Bot が起動しない
+- `.env` ファイルが存在するか確認
+- Python バージョンが 3.10 以上か確認
+
+### メッセージを受信しない
+- Discord Developer Portal で **Message Content Intent** が有効か確認
+- Bot がサーバーに招待されているか確認
+
+### Gemini API エラー
+- API Key が正しいか確認
+- Google AI Studio でクォータ制限を確認
+
+---
+
+## 🎯 成功基準
+
+以下がすべて達成されれば MVP は成功:
+
+- [ ] Discord でメッセージを受信できる
+- [ ] Gemini API でテキストが整形される
+- [ ] 整形結果が Discord Embed で表示される
+- [ ] ボタンクリックで X アプリが開く
+- [ ] 整形後のテキストが 140 字以内に収まる
+- [ ] エラーが発生しても Bot がクラッシュしない
+
+---
+
+## 📌 次のアクション
+
+### 実装開始時
+1. `IMPLEMENTATION_PLAN.md` を読む
+2. 環境変数を `.env` に設定
+3. `main.py` を実装
+4. テストを実行
+
+### 実装完了後
+1. すべてのテストケースを確認
+2. README.md を更新
+3. Git にコミット（`.env` は除く）
+4. 本番環境でテスト
+
+---
+
+## 📞 サポート
+
+実装中に不明点があれば、以下を参照:
+- `REQUIREMENTS.md` - 要件の詳細
+- `IMPLEMENTATION_PLAN.md` - 実装手順とデバッグ方法
+- Discord.py ドキュメント: https://discordpy.readthedocs.io/
+- Gemini API ドキュメント: https://ai.google.dev/docs
+
+---
+
+**最終更新**: 2025-11-30
+**プロジェクトステータス**: 🟡 準備完了・実装待ち
