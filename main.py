@@ -68,9 +68,29 @@ class TweetButton(View):
     def __init__(self, tweet_text: str):
         super().__init__(timeout=None)
 
-        # Twitter Intent URL の生成（URLエンコード）
-        encoded_text = quote(tweet_text)
-        tweet_url = f"https://twitter.com/intent/tweet?text={encoded_text}"
+        # Discord のボタンURL最大長は512文字
+        MAX_URL_LENGTH = 512
+        BASE_URL = "https://twitter.com/intent/tweet?text="
+
+        # テキストを切り詰めてURL長を調整
+        truncated_text = tweet_text
+        encoded_text = quote(truncated_text)
+        tweet_url = f"{BASE_URL}{encoded_text}"
+
+        # URL長が制限を超える場合は段階的に短くする
+        while len(tweet_url) > MAX_URL_LENGTH and len(truncated_text) > 0:
+            # 10文字ずつ短くして再試行
+            truncated_text = truncated_text[:-10].rstrip()
+            if truncated_text:
+                truncated_text += "…"  # 省略記号を追加
+            encoded_text = quote(truncated_text)
+            tweet_url = f"{BASE_URL}{encoded_text}"
+
+        if len(truncated_text) < len(tweet_text):
+            logger.warning(
+                f"URL長制限のためテキストを切り詰めました: "
+                f"{len(tweet_text)}文字 → {len(truncated_text)}文字"
+            )
 
         # ボタンの追加
         button = Button(
