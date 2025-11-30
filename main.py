@@ -135,6 +135,11 @@ async def on_message(message: discord.Message):
         logger.debug("空メッセージを受信したため無視")
         return
 
+    # 特定チャンネル以外は無視
+    if message.channel.name != "tweet-drafter":
+        logger.debug(f"チャンネル '{message.channel.name}' はスキップ（tweet-drafter のみ対応）")
+        return
+
     logger.info(f"メッセージ受信: {message.author.name}: {message.content[:50]}...")
 
     # 処理中リアクションを追加
