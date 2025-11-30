@@ -6,7 +6,7 @@
 
 ### 主な機能
 1. Discordでテキストメッセージを受信
-2. Gemini 1.5 Flash APIで文章を整形（誤字修正・要約・140字以内）
+2. Gemini 2.5 Flash APIで文章を整形（誤字修正・要約・140字以内）
 3. 整形結果をDiscord Embedで表示
 4. 「Xアプリで開く」ボタンで Twitter Intent URL を生成
 
@@ -82,7 +82,7 @@ isdf_tweet_drafter/
    - 必須設定: Message Content Intent を有効化
 
 2. **Google Gemini API**
-   - モデル: `gemini-1.5-flash`
+   - モデル: `gemini-2.5-flash`
    - APIキー: `.env` の `GEMINI_API_KEY`
    - システムインストラクション: 140字以内に整形、ハッシュタグなし
 

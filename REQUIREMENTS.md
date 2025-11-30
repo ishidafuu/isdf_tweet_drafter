@@ -38,7 +38,7 @@
   - すべてのテキストメッセージを処理対象とする
 
 #### 2.1.2 AI文章整形機能
-- **使用API**: Google Gemini 1.5 Flash
+- **使用API**: Google Gemini 2.5 Flash
 - **処理内容**:
   1. **誤字脱字の修正**: 音声入力特有の誤認識を修正
   2. **自然な言い回しへの変換**: 口語的な表現を自然な文章に
@@ -112,7 +112,7 @@ isdf_tweet_drafter/
 
 2. **Google Gemini API**
    - Google AI Studio で API Key を取得
-   - モデル: `gemini-1.5-flash`
+   - モデル: `gemini-2.5-flash`
 
 ---
 
