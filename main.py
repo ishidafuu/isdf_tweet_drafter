@@ -67,34 +67,44 @@ class TweetButton(View):
 
     def __init__(self, tweet_text: str):
         super().__init__(timeout=None)
-        self.is_url_valid = False
+        self.is_truncated = False
 
         # Discord のボタンURL最大長は512文字
         MAX_URL_LENGTH = 512
         BASE_URL = "https://twitter.com/intent/tweet?text="
 
         # URLエンコードして長さをチェック
-        encoded_text = quote(tweet_text)
+        truncated_text = tweet_text
+        encoded_text = quote(truncated_text)
         tweet_url = f"{BASE_URL}{encoded_text}"
 
-        # URL長が制限内の場合のみボタンを追加
-        if len(tweet_url) <= MAX_URL_LENGTH:
-            button = Button(
-                label="Xアプリで開く",
-                style=ButtonStyle.link,
-                url=tweet_url,
-                emoji="🐦"
-            )
-            self.add_item(button)
-            self.is_url_valid = True
-            logger.info(f"Twitter Intent URL生成成功 (長さ: {len(tweet_url)}文字)")
-        else:
-            # URL長が制限を超える場合はボタンを追加しない
+        # URL長が制限を超える場合は段階的に短くする
+        while len(tweet_url) > MAX_URL_LENGTH and len(truncated_text) > 0:
+            # 10文字ずつ短くして再試行
+            truncated_text = truncated_text[:-10].rstrip()
+            if truncated_text:
+                truncated_text += "…"  # 省略記号を追加
+            encoded_text = quote(truncated_text)
+            tweet_url = f"{BASE_URL}{encoded_text}"
+
+        # 切り詰めが発生したかチェック
+        if len(truncated_text) < len(tweet_text):
+            self.is_truncated = True
             logger.warning(
-                f"Twitter Intent URLが長すぎるためボタンを無効化: "
-                f"{len(tweet_url)}文字 (上限: {MAX_URL_LENGTH}文字)"
+                f"URL長制限のためボタンのテキストを切り詰めました: "
+                f"{len(tweet_text)}文字 → {len(truncated_text)}文字"
             )
-            self.is_url_valid = False
+        else:
+            logger.info(f"Twitter Intent URL生成成功 (長さ: {len(tweet_url)}文字)")
+
+        # ボタンを常に追加（切り詰め後のテキストを使用）
+        button = Button(
+            label="Xアプリで開く",
+            style=ButtonStyle.link,
+            url=tweet_url,
+            emoji="🐦"
+        )
+        self.add_item(button)
 
 
 async def format_text_with_gemini(text: str) -> Optional[str]:
@@ -218,11 +228,11 @@ async def on_message(message: discord.Message):
         # ボタン付きで送信
         view = TweetButton(formatted_text)
 
-        # URL長によってフッターを変更
-        if view.is_url_valid:
-            embed.set_footer(text="下のボタンをタップしてXアプリで投稿できます")
+        # 切り詰めの有無によってフッターを変更
+        if view.is_truncated:
+            embed.set_footer(text="⚠️ ボタンのテキストは一部省略されています。完全版は上記の「整形後」をコピーしてください")
         else:
-            embed.set_footer(text="⚠️ テキストが長すぎるため、上記をコピーして手動で投稿してください")
+            embed.set_footer(text="下のボタンをタップしてXアプリで投稿できます")
 
         await message.channel.send(embed=embed, view=view)
 
