@@ -67,12 +67,37 @@ class TweetButton(View):
 
     def __init__(self, tweet_text: str):
         super().__init__(timeout=None)
+        self.is_truncated = False
 
-        # Twitter Intent URL の生成（URLエンコード）
-        encoded_text = quote(tweet_text)
-        tweet_url = f"https://twitter.com/intent/tweet?text={encoded_text}"
+        # Discord のボタンURL最大長は512文字
+        MAX_URL_LENGTH = 512
+        BASE_URL = "https://twitter.com/intent/tweet?text="
 
-        # ボタンの追加
+        # URLエンコードして長さをチェック
+        truncated_text = tweet_text
+        encoded_text = quote(truncated_text)
+        tweet_url = f"{BASE_URL}{encoded_text}"
+
+        # URL長が制限を超える場合は段階的に短くする
+        while len(tweet_url) > MAX_URL_LENGTH and len(truncated_text) > 0:
+            # 10文字ずつ短くして再試行
+            truncated_text = truncated_text[:-10].rstrip()
+            if truncated_text:
+                truncated_text += "…"  # 省略記号を追加
+            encoded_text = quote(truncated_text)
+            tweet_url = f"{BASE_URL}{encoded_text}"
+
+        # 切り詰めが発生したかチェック
+        if len(truncated_text) < len(tweet_text):
+            self.is_truncated = True
+            logger.warning(
+                f"URL長制限のためボタンのテキストを切り詰めました: "
+                f"{len(tweet_text)}文字 → {len(truncated_text)}文字"
+            )
+        else:
+            logger.info(f"Twitter Intent URL生成成功 (長さ: {len(tweet_url)}文字)")
+
+        # ボタンを常に追加（切り詰め後のテキストを使用）
         button = Button(
             label="Xアプリで開く",
             style=ButtonStyle.link,
@@ -126,91 +151,109 @@ async def on_ready():
 async def on_message(message: discord.Message):
     """メッセージ受信時のイベント"""
 
-    # Bot 自身のメッセージは無視（無限ループ防止）
-    if message.author == client.user:
-        return
-
-    # 空メッセージのバリデーション
-    if not message.content or not message.content.strip():
-        logger.debug("空メッセージを受信したため無視")
-        return
-
-    # 特定チャンネル以外は無視
-    if message.channel.name != "tweet-drafter":
-        logger.debug(f"チャンネル '{message.channel.name}' はスキップ（tweet-drafter のみ対応）")
-        return
-
-    logger.info(f"メッセージ受信: {message.author.name}: {message.content[:50]}...")
-
-    # 処理中リアクションを追加
     try:
-        await message.add_reaction("⏳")
-    except Exception as e:
-        logger.warning(f"リアクション追加エラー: {e}")
+        # Bot 自身のメッセージは無視（無限ループ防止）
+        if message.author == client.user:
+            return
 
-    # Gemini API でテキストを整形
-    formatted_text = await format_text_with_gemini(message.content)
+        # 空メッセージのバリデーション
+        if not message.content or not message.content.strip():
+            logger.debug("空メッセージを受信したため無視")
+            return
 
-    # 処理中リアクションを削除
-    try:
-        await message.remove_reaction("⏳", client.user)
-    except Exception as e:
-        logger.warning(f"リアクション削除エラー: {e}")
+        # 特定チャンネル以外は無視
+        if message.channel.name != "tweet-drafter":
+            logger.debug(f"チャンネル '{message.channel.name}' はスキップ（tweet-drafter のみ対応）")
+            return
 
-    # エラー処理
-    if formatted_text is None:
-        error_embed = discord.Embed(
-            title="❌ エラーが発生しました",
-            description="テキストの整形中にエラーが発生しました。もう一度お試しください。",
-            color=discord.Color.red()
+        logger.info(f"メッセージ受信: {message.author.name}: {message.content[:50]}...")
+
+        # 処理中リアクションを追加
+        try:
+            await message.add_reaction("⏳")
+        except Exception as e:
+            logger.warning(f"リアクション追加エラー: {e}")
+
+        # Gemini API でテキストを整形
+        formatted_text = await format_text_with_gemini(message.content)
+
+        # 処理中リアクションを削除
+        try:
+            await message.remove_reaction("⏳", client.user)
+        except Exception as e:
+            logger.warning(f"リアクション削除エラー: {e}")
+
+        # エラー処理
+        if formatted_text is None:
+            error_embed = discord.Embed(
+                title="❌ エラーが発生しました",
+                description="テキストの整形中にエラーが発生しました。もう一度お試しください。",
+                color=discord.Color.red()
+            )
+            await message.channel.send(embed=error_embed)
+            return
+
+        # Discord Embed の作成
+        embed = discord.Embed(
+            title="✨ テキスト整形完了",
+            color=discord.Color.blue()
         )
-        await message.channel.send(embed=error_embed)
-        return
 
-    # Discord Embed の作成
-    embed = discord.Embed(
-        title="✨ テキスト整形完了",
-        color=discord.Color.blue()
-    )
+        # 整形前のテキスト（最初の100文字まで表示）
+        original_preview = message.content[:100]
+        if len(message.content) > 100:
+            original_preview += "..."
+        embed.add_field(
+            name="📝 整形前",
+            value=f"```{original_preview}```",
+            inline=False
+        )
 
-    # 整形前のテキスト（最初の100文字まで表示）
-    original_preview = message.content[:100]
-    if len(message.content) > 100:
-        original_preview += "..."
-    embed.add_field(
-        name="📝 整形前",
-        value=f"```{original_preview}```",
-        inline=False
-    )
+        # 整形後のテキスト
+        embed.add_field(
+            name="🎯 整形後（投稿用）",
+            value=formatted_text,
+            inline=False
+        )
 
-    # 整形後のテキスト
-    embed.add_field(
-        name="🎯 整形後（投稿用）",
-        value=formatted_text,
-        inline=False
-    )
+        # 文字数カウント表示
+        char_count = len(formatted_text)
+        char_status = "✅" if char_count <= 140 else "⚠️"
+        embed.add_field(
+            name="📊 文字数",
+            value=f"{char_status} {char_count} / 140 文字",
+            inline=False
+        )
 
-    # 文字数カウント表示
-    char_count = len(formatted_text)
-    char_status = "✅" if char_count <= 140 else "⚠️"
-    embed.add_field(
-        name="📊 文字数",
-        value=f"{char_status} {char_count} / 140 文字",
-        inline=False
-    )
+        # ボタン付きで送信
+        view = TweetButton(formatted_text)
 
-    # フッター
-    embed.set_footer(text="下のボタンをタップしてXアプリで投稿できます")
+        # 切り詰めの有無によってフッターを変更
+        if view.is_truncated:
+            embed.set_footer(text="⚠️ ボタンのテキストは一部省略されています。完全版は上記の「整形後」をコピーしてください")
+        else:
+            embed.set_footer(text="下のボタンをタップしてXアプリで投稿できます")
 
-    # ボタン付きで送信
-    view = TweetButton(formatted_text)
-    await message.channel.send(embed=embed, view=view)
+        await message.channel.send(embed=embed, view=view)
 
-    # 完了リアクション
-    try:
-        await message.add_reaction("✅")
+        # 完了リアクション
+        try:
+            await message.add_reaction("✅")
+        except Exception as e:
+            logger.warning(f"完了リアクション追加エラー: {e}")
+
     except Exception as e:
-        logger.warning(f"完了リアクション追加エラー: {e}")
+        # 予期しないエラーをキャッチして Discord に通知
+        logger.error(f"on_message で予期しないエラーが発生: {e}", exc_info=True)
+        try:
+            error_embed = discord.Embed(
+                title="❌ システムエラーが発生しました",
+                description=f"予期しないエラーが発生しました。管理者に連絡してください。\n\n```{str(e)}```",
+                color=discord.Color.red()
+            )
+            await message.channel.send(embed=error_embed)
+        except Exception as send_error:
+            logger.error(f"エラーメッセージの送信にも失敗: {send_error}")
 
 
 def main():
