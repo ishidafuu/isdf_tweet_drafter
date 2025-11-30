@@ -24,12 +24,12 @@ logger = logging.getLogger(__name__)
 
 # 環境変数の読み込み
 load_dotenv()
-DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
+DISCORD_BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 # 環境変数のバリデーション
-if not DISCORD_TOKEN:
-    raise ValueError("DISCORD_TOKEN が .env ファイルに設定されていません")
+if not DISCORD_BOT_TOKEN:
+    raise ValueError("DISCORD_BOT_TOKEN が .env ファイルに設定されていません")
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY が .env ファイルに設定されていません")
 
@@ -45,7 +45,7 @@ X（旧Twitter）への投稿に適した形式にリライトしてください
 1. 誤字脱字を修正し、自然な口語体にする。
 2. 必ず140文字以内に収める。
 3. ハッシュタグは付けない。
-4. 絵文字を1つ〜2つ適度に使用して親しみやすくする。
+4. 絵文字を使用しない。
 5. 結果のテキストのみを出力する（説明文は不要）。
 """
 
@@ -260,7 +260,7 @@ def main():
     """メイン関数"""
     try:
         logger.info("Bot を起動しています...")
-        client.run(DISCORD_TOKEN)
+        client.run(DISCORD_BOT_TOKEN)
     except Exception as e:
         logger.error(f"Bot の起動に失敗しました: {e}")
         raise
