@@ -109,15 +109,22 @@ python main.py
 
 ```
 isdf_tweet_drafter/
-├── .env                  # 環境変数（Git管理対象外）
-├── .env.example          # 環境変数テンプレート
-├── .gitignore            # Git除外設定
-├── requirements.txt      # Pythonパッケージ
-├── main.py               # メインロジック（未実装）
-├── README.md             # 本ファイル
-├── REQUIREMENTS.md       # 詳細な要件定義書
-├── IMPLEMENTATION_PLAN.md # 実装手順書
-└── CLAUDE.md             # Claude Code用コンテキスト
+├── .claude/
+│   └── commands/
+│       ├── start.md          # 作業開始コマンド
+│       └── status.md         # 進捗確認コマンド
+├── docs/
+│   ├── plan.md               # タスク管理ファイル
+│   └── session-log.md        # セッションログ
+├── .env                      # 環境変数（Git管理対象外）
+├── .env.example              # 環境変数テンプレート
+├── .gitignore                # Git除外設定
+├── requirements.txt          # Pythonパッケージ
+├── main.py                   # メインロジック（未実装）
+├── README.md                 # 本ファイル
+├── REQUIREMENTS.md           # 詳細な要件定義書
+├── IMPLEMENTATION_PLAN.md    # 実装手順書
+└── CLAUDE.md                 # Claude Code用コンテキスト
 ```
 
 ---
@@ -127,6 +134,35 @@ isdf_tweet_drafter/
 - **[REQUIREMENTS.md](REQUIREMENTS.md)**: 詳細な要件定義書
 - **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)**: ステップバイステップの実装手順
 - **[CLAUDE.md](CLAUDE.md)**: プロジェクト全体のコンテキスト（AI開発用）
+- **[docs/plan.md](docs/plan.md)**: フェーズ別タスク管理
+- **[docs/session-log.md](docs/session-log.md)**: 作業セッション履歴
+
+---
+
+## 🤖 開発者向け：Claude Code カスタムコマンド
+
+このプロジェクトでは、効率的なタスク管理のためのカスタムコマンドを使用しています。
+
+### `/start` - 作業開始コマンド
+次の未完了タスクを自動検出し、実装を開始します。
+
+```
+/start
+```
+
+### `/status` - 進捗確認コマンド
+現在のプロジェクト進捗状況を確認し、次に取り組むべきタスクを提案します。
+
+```
+/status
+```
+
+**使い方**:
+1. セッション開始時に `/status` で現在の進捗を確認
+2. `/start` で次のタスクを開始
+3. タスク完了後、`/clear` でコンテキストをクリアし、再度 `/start` で次のタスクへ
+
+詳細は [claude-commands-template](https://github.com/anthropics/claude-code) を参照してください。
 
 ---
 
