@@ -71,33 +71,24 @@ class TweetButton(View):
 
         # Discord のボタンURL最大長は512文字
         MAX_URL_LENGTH = 512
-        BASE_URL = "https://twitter.com/intent/tweet?text="
+        BASE_URL = "https://twitter.com/intent/tweet"
 
         # URLエンコードして長さをチェック
-        truncated_text = tweet_text
-        encoded_text = quote(truncated_text)
-        tweet_url = f"{BASE_URL}{encoded_text}"
+        encoded_text = quote(tweet_text)
+        full_url = f"{BASE_URL}?text={encoded_text}"
 
-        # URL長が制限を超える場合は段階的に短くする
-        while len(tweet_url) > MAX_URL_LENGTH and len(truncated_text) > 0:
-            # 10文字ずつ短くして再試行
-            truncated_text = truncated_text[:-10].rstrip()
-            if truncated_text:
-                truncated_text += "…"  # 省略記号を追加
-            encoded_text = quote(truncated_text)
-            tweet_url = f"{BASE_URL}{encoded_text}"
-
-        # 切り詰めが発生したかチェック
-        if len(truncated_text) < len(tweet_text):
+        # URL長が制限を超える場合はテキストを渡さない
+        if len(full_url) > MAX_URL_LENGTH:
             self.is_truncated = True
+            tweet_url = BASE_URL  # textパラメータなし
             logger.warning(
-                f"URL長制限のためボタンのテキストを切り詰めました: "
-                f"{len(tweet_text)}文字 → {len(truncated_text)}文字"
+                f"URL長制限のためボタンにテキストを渡しません（元の長さ: {len(full_url)}文字）"
             )
         else:
+            tweet_url = full_url
             logger.info(f"Twitter Intent URL生成成功 (長さ: {len(tweet_url)}文字)")
 
-        # ボタンを常に追加（切り詰め後のテキストを使用）
+        # ボタンを常に追加
         button = Button(
             label="Xアプリで開く",
             style=ButtonStyle.link,
@@ -212,7 +203,7 @@ async def on_message(message: discord.Message):
         # 整形後のテキスト
         embed.add_field(
             name="🎯 整形後（投稿用）",
-            value=formatted_text,
+            value=f"```{formatted_text}```",
             inline=False
         )
 
@@ -230,7 +221,7 @@ async def on_message(message: discord.Message):
 
         # 切り詰めの有無によってフッターを変更
         if view.is_truncated:
-            embed.set_footer(text="⚠️ ボタンのテキストは一部省略されています。完全版は上記の「整形後」をコピーしてください")
+            embed.set_footer(text="⚠️ テキストが長いためボタンからは空投稿になります。上記の「整形後」をコピーしてご利用ください")
         else:
             embed.set_footer(text="下のボタンをタップしてXアプリで投稿できます")
 
