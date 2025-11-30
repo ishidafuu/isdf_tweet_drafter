@@ -1,0 +1,8 @@
+# Discord Bot Framework
+discord.py>=2.3.0
+
+# Google Gemini API Client
+google-generativeai>=0.3.0
+
+# Environment Variable Management
+python-dotenv>=1.0.0
