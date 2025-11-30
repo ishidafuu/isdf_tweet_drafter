@@ -129,7 +129,7 @@ X（旧Twitter）への投稿に適した形式にリライトしてください
 """
 
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
+    model_name="gemini-2.5-flash",
     system_instruction=SYSTEM_INSTRUCTION
 )
 ```
